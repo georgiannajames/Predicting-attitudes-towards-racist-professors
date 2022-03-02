@@ -39,7 +39,7 @@ In these repo, I create several machine learning models to predict attitudes tow
 
 
 * [R Markdown file](./racist_professors.Rmd)
-* [Markdownn file](./racist_professors.md)
+* [Markdown file](./racist_professors.md)
 
 # Data
 
