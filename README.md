@@ -35,8 +35,12 @@ devtools::install_github("uc-cfss/rcfss")
 
 ### Predicting attitudes towards racist college professors 
 
-In these repo, I create several machine learning models to predict attitudes towards racist college prfoessors. The data set ```rcfss::gss``` contains the outcome variable of interest, ```colrac```, which is a factor variable indicating professor's answers to the question “Should a person who believes that Blacks are genetically inferior be allowed to teach in a college or university?”
+In these repo, I create several machine learning models to predict attitudes towards racist college prfoessors. The data set ```rcfss::gss``` contains the outcome variable of interest, ```colrac```, which is a factor variable indicating professor's answers to the question “Should a person who believes that Blacks are genetically inferior be allowed to teach in a college or university?” This variable is a factor variable coded as either ```"ALLOWED"``` or ```"NOT ALLOWED"``` according to respondents answer. 
 
 
 * [R Markdown file](./racist_professors.Rmd)
-* [Markdwon file](./racist_professors.md)
+* [Markdownn file](./racist_professors.md)
+
+# Data
+
+This data was originally sourced from the [General Social Survey](https://gss.norc.org). The data was condensed, selecting for a few variables in the year 2012 and inncluded in the package```rcfss``` in a data set named ```gss``. 
