@@ -1,0 +1,315 @@
+---
+title: "Predicting Attitudes Towards Racist Professors"
+author: "Georgianna James"
+date: '2022-03-02'
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## Required Packages
+
+```{r packages, message=FALSE}
+
+
+library(rcfss)
+library(tidyverse)
+library(tidymodels)
+library(rsample)
+library(knitr)
+library(ranger)
+library(kknn)
+library(glmnet)
+
+set.seed(100)
+
+theme_set(theme_minimal())
+```
+
+## Load the data
+
+```{r load data}
+data("gss", package = "rcfss")
+
+# create a data set that omits columns that are not predictors
+
+gss_pred <- gss %>%
+  select(-id, -wtss)
+```
+
+# Creating training and testing sets
+
+```{r q1 split data}
+
+
+# split data into train and test
+
+gss_split <- initial_split(gss_pred, prop = 3 / 4)
+gss_train <- training(gss_split)
+gss_test <- testing(gss_split)
+```
+
+
+# Predictions using a logistic regression model
+
+```{r q2 log model}
+
+# define logistic regression model
+
+log_mod <- logistic_reg() %>%
+  set_engine("glm") %>%
+  set_mode("classification")
+```
+
+
+```{r q2 cross validation}
+
+# cross validate with 10 folds
+
+
+# creating folds
+
+gss_fold <- vfold_cv(data = gss_train, v = 10, strata = colrac)
+```
+
+```{r q2 fit model}
+# refitting model to samples and collecting metrics
+
+gss_fold_pred <- log_mod %>%
+  fit_resamples(colrac ~ age + black + degree + partyid_3 + sex + south, resamples = gss_fold) %>%
+  collect_metrics()
+```
+
+
+## Logistic Regression Metrics Table
+
+```{r q2 metrics table, echo=FALSE}
+kable(gss_fold_pred, col.names = c("Metric", "Estimator", "Mean", "n", "Standard Error", "Config"))
+```
+
+
+
+
+# Predictions using a random forest model
+
+```{r q3 define recipe}
+# define gss recipe
+
+gss_rec <- recipe(colrac ~ ., data = gss_pred) %>%
+  step_impute_median(all_numeric_predictors()) %>%
+  step_impute_mode(all_nominal_predictors()) %>%
+  step_naomit(all_outcomes(), skip = TRUE)
+```
+
+```{r q3define model}
+
+# define random forest model
+
+rf_mod <- rand_forest(
+  mode = "classification",
+  engine = "ranger",
+  mtry = NULL,
+  trees = NULL,
+  min_n = NULL
+)
+```
+
+```{r q3 define workflow}
+
+# define workflow
+
+rf_wf <- workflow() %>%
+  add_recipe(gss_rec) %>%
+  add_model(rf_mod)
+```
+
+```{r q3 cross validate}
+# cross validate
+
+gss_fold <- vfold_cv(data = gss_train, v = 10, strata = colrac)
+```
+
+
+```{r q3 fit wf }
+
+# fit the workflow
+
+rf_wf_results <- rf_wf %>%
+  fit_resamples(resamples = gss_fold) %>%
+  collect_metrics()
+```
+
+## Random Forrest  Metrics Table
+
+```{r q3 rf results, echo=FALSE}
+# present results
+
+kable(rf_wf_results, col.names = c("Metric", "Estimator", "Mean", "n", "Standard Error", "Config"))
+```
+
+# Predictions using k-nearest neighbors mdoel
+
+```{r q4 define model}
+# define the model
+
+knn_mod <- nearest_neighbor() %>%
+  set_engine("kknn") %>%
+  set_mode("classification")
+```
+
+```{r q4 define recipe}
+
+# define the recipe
+
+knn_rec <- recipe(colrac ~ ., data = gss_pred) %>%
+  step_impute_median(all_numeric_predictors()) %>%
+  step_impute_mode(all_nominal_predictors()) %>%
+  step_naomit(all_outcomes(), skip = TRUE) %>%
+  step_novel(all_nominal_predictors()) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_numeric())
+```
+
+```{r q4 define wf}
+
+# define the workflow
+
+knn_wf <- workflow() %>%
+  add_recipe(knn_rec) %>%
+  add_model(knn_mod)
+```
+
+
+```{r q4 cross validate}
+# cross validate
+
+gss_fold <- vfold_cv(data = gss_train, v = 10, strata = colrac)
+```
+
+
+```{r q4 fit wf}
+# fit the workflow
+
+knn_wf_results <- knn_wf %>%
+  fit_resamples(resamples = gss_fold) %>%
+  collect_metrics()
+```
+
+
+## K-Nearest Neighbors Metrics Table
+
+```{r q4 metrics, echo=FALSE}
+
+kable(knn_wf_results, col.names = c("Metric", "Estimator", "Mean", "n", "Standard Error", "Config"))
+```
+# Predictions using a Ridge Logistic Regression Model
+
+```{r q5 define model}
+
+# define model
+
+ridge_log_mod <- logistic_reg(
+  penalty = .01,
+  mixture = 0,
+  mode = "classification",
+  engine = "glmnet"
+)
+```
+
+```{r q5 define recipe}
+
+# define recipe
+
+ridge_rec <- recipe(colrac ~ ., data = gss_pred) %>%
+  step_impute_median(all_numeric_predictors()) %>%
+  step_impute_mode(all_nominal_predictors()) %>%
+  step_naomit(all_outcomes(), skip = TRUE) %>%
+  step_novel(all_nominal_predictors()) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_numeric())
+```
+
+```{r q5 define wf}
+
+# define the workflow
+
+ridge_wf <- workflow() %>%
+  add_recipe(ridge_rec) %>%
+  add_model(ridge_log_mod)
+```
+
+
+```{r q5 cross validate}
+# cross validate
+
+gss_fold <- vfold_cv(data = gss_train, v = 10, strata = colrac)
+```
+
+
+```{r q5 fit wf}
+# fit the workflow
+
+ridge_wf_results <- ridge_wf %>%
+  fit_resamples(resamples = gss_fold) %>%
+  collect_metrics()
+```
+
+
+## Ridge Logistic Regression Model Metrics Table
+
+```{r q5 metrics, echo=FALSE}
+
+kable(ridge_wf_results, col.names = c("Metric", "Estimator", "Mean", "n", "Standard Error", "Config"))
+```
+# Comparing all results
+
+## Logistic Regression Metrics Table
+
+```{r q6 logistic metrics, echo=FALSE}
+kable(gss_fold_pred, col.names = c("Metric", "Estimator", "Mean", "n", "Standard Error", "Config"))
+```
+## Random Forrest  Metrics Table
+
+```{r q6 rf metrics, echo=FALSE}
+# present results
+
+kable(rf_wf_results, col.names = c("Metric", "Estimator", "Mean", "n", "Standard Error", "Config"))
+```
+## 5-Nearest Neighbors Metrics Table
+
+```{r q6  knn metrics, echo=FALSE}
+
+kable(knn_wf_results, col.names = c("Metric", "Estimator", "Mean", "n", "Standard Error", "Config"))
+```
+## Ridge Logistic Regression Model Metrics Table
+
+```{r q6 ridge metrics, echo=FALSE}
+
+kable(ridge_wf_results, col.names = c("Metric", "Estimator", "Mean", "n", "Standard Error", "Config"))
+```
+
+
+
+The random forest model had the most accurate predictions, so I will train this recipe/model using the full training set and report the accuracy using the held-out test set of data.
+
+```{r}
+
+# training the rf recipe using the full training set and predicting test set outcomes
+
+rf_test_results <- rf_wf %>%
+  fit(data = gss_train) %>%
+  predict(new_data = gss_test) %>%
+  mutate(true_gss = gss_test$colrac) %>%
+  accuracy(truth = true_gss, estimate = .pred_class)
+```
+
+## Final Random Forest Model Prediction Results 
+```{r echo=FALSE}
+kable(rf_test_results, col.names = c("Metric", "Estimator", "Estimate"))
+```
