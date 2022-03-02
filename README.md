@@ -38,5 +38,5 @@ devtools::install_github("uc-cfss/rcfss")
 In these repo, I create several machine learning models to predict attitudes towards racist college prfoessors. The data set ```rcfss::gss``` contains the outcome variable of interest, ```colrac```, which is a factor variable indicating professor's answers to the question “Should a person who believes that Blacks are genetically inferior be allowed to teach in a college or university?”
 
 
-* [Part 2 R Markdown file](./part2.Rmd)
-* [Part 2 Markdwon file](./part2.md)
+* [R Markdown file](./racist_professors.Rmd)
+* [Markdwon file](./racist_professors.md)
