@@ -41,6 +41,11 @@ In these repo, I create several machine learning models to predict attitudes tow
 * [R Markdown file](./racist_professors.Rmd)
 * [Markdown file](./racist_professors.md)
 
+
+## Conclusion 
+
+After developing a variety of machine learning models to predict attitude using a training set, I found that my random forest model yielded the most accurate predictions and decided to use this one to make predictions on my test set, where I achieved an accuracy level of about 82%. 
+
 # Data
 
 This data was originally sourced from the [General Social Survey](https://gss.norc.org). The data was condensed, selecting for a few variables from the year 2012, and included in the package ```rcfss``` in a data set named ```gss```. 
